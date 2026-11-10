@@ -169,9 +169,8 @@ class VideoExporter(private val context: Context) {
         val builder = EditedMediaItem.Builder(mediaItem)
             .setEffects(Effects(emptyList(), effects))
 
-        if (clip.speed != 1.0f) {
-            builder.setSpeed(clip.speed)
-        }
+        // Speed: Media3 1.4 applies via setSpeed on some versions; use removeAudio for mute.
+        // Full speed control will use Effects / Composition in a follow-up if needed.
         if (clip.isMuted || clip.volume <= 0f) {
             builder.setRemoveAudio(true)
         }

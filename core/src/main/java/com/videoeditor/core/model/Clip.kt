@@ -1,0 +1,38 @@
+package com.videoeditor.core.model
+
+import java.util.UUID
+
+/**
+ * Non-destructive clip representation.
+ * Original media path is never modified.
+ */
+data class Clip(
+    val id: String = UUID.randomUUID().toString(),
+    val mediaUri: String,
+    val mediaType: MediaType,
+    val displayName: String,
+    /** Source start time in microseconds (trim in point) */
+    val sourceStartUs: Long = 0L,
+    /** Source end time in microseconds (trim out point). 0 = full duration. */
+    val sourceEndUs: Long = 0L,
+    /** Duration of the clip on the timeline after trim, in microseconds */
+    val durationUs: Long,
+    /** Position on the timeline in microseconds */
+    val timelineStartUs: Long = 0L,
+    val speed: Float = 1.0f,
+    val volume: Float = 1.0f,
+    val rotation: Int = 0,
+    val isMuted: Boolean = false
+) {
+    val timelineEndUs: Long
+        get() = timelineStartUs + (durationUs / speed.coerceAtLeast(0.1f)).toLong()
+
+    fun withTimelineStart(startUs: Long): Clip = copy(timelineStartUs = startUs)
+
+    fun trimmed(newSourceStartUs: Long, newSourceEndUs: Long, newDurationUs: Long): Clip =
+        copy(
+            sourceStartUs = newSourceStartUs,
+            sourceEndUs = newSourceEndUs,
+            durationUs = newDurationUs
+        )
+}

@@ -11,20 +11,31 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.videoeditor.app.ui.EditorScreen
 import com.videoeditor.core.PerformanceDetector
+import com.videoeditor.core.model.Project
 import com.videoeditor.coreui.theme.VideoEditorTheme
+import com.videoeditor.project.ProjectRepository
 
 class MainActivity : ComponentActivity() {
+    private val projectRepository = ProjectRepository()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -34,7 +45,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = Color(0xFF0D0D0D)
                 ) {
-                    Phase1HomeScreen()
+                    AppRoot(projectRepository)
                 }
             }
         }
@@ -42,9 +53,28 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Phase1HomeScreen() {
-    val context = androidx.compose.ui.platform.LocalContext.current
-    val capabilities = PerformanceDetector.detect(context)
+fun AppRoot(repository: ProjectRepository) {
+    var currentProject by remember { mutableStateOf<Project?>(null) }
+
+    if (currentProject != null) {
+        EditorScreen(
+            project = currentProject!!,
+            onBack = { currentProject = null }
+        )
+    } else {
+        HomeScreen(
+            onNewProject = {
+                val p = repository.createProject("Untitled Project")
+                currentProject = p
+            }
+        )
+    }
+}
+
+@Composable
+fun HomeScreen(onNewProject: () -> Unit) {
+    val context = LocalContext.current
+    val capabilities = remember { PerformanceDetector.detect(context) }
 
     Column(
         modifier = Modifier
@@ -62,49 +92,27 @@ fun Phase1HomeScreen() {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Phase 1 Foundation",
+            text = "Phase 2 — Media & Timeline",
             color = Color(0xFFB0B0B0),
             fontSize = 16.sp
         )
-        Spacer(modifier = Modifier.height(32.dp))
-        Text(
-            text = "Device Profile",
-            color = Color.White,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold
-        )
-        Spacer(modifier = Modifier.height(12.dp))
-        Text(
-            text = "RAM: ${capabilities.totalRamMb} MB (avail ${capabilities.availableRamMb} MB)",
-            color = Color(0xFFB0B0B0),
-            fontSize = 14.sp
-        )
-        Text(
-            text = "CPU cores: ${capabilities.cpuCores}",
-            color = Color(0xFFB0B0B0),
-            fontSize = 14.sp
-        )
-        Text(
-            text = "Low-RAM device: ${capabilities.isLowRamDevice}",
-            color = Color(0xFFB0B0B0),
-            fontSize = 14.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         Text(
             text = "Mode: ${capabilities.recommendedMode}",
-            color = Color(0xFF4FC3F7),
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Medium
-        )
-        Text(
-            text = "Max preview: ${capabilities.maxPreviewHeight}p",
-            color = Color(0xFFB0B0B0),
+            color = Color(0xFF80CBC4),
             fontSize = 14.sp
         )
         Text(
-            text = "3D allowed: ${capabilities.allow3d}",
-            color = Color(0xFFB0B0B0),
-            fontSize = 14.sp
+            text = "RAM: ${capabilities.totalRamMb} MB · Preview: ${capabilities.maxPreviewHeight}p",
+            color = Color(0xFF888888),
+            fontSize = 12.sp
         )
+        Spacer(modifier = Modifier.height(40.dp))
+        Button(
+            onClick = onNewProject,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FC3F7))
+        ) {
+            Text("New Project", color = Color.Black, fontWeight = FontWeight.SemiBold)
+        }
     }
 }

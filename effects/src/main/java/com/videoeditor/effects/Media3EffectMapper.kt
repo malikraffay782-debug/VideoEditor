@@ -39,7 +39,7 @@ object Media3EffectMapper {
                         r, g, b + s, 0f,
                         0f, 0f, 0f, 1f
                     )
-                    result.add(RgbMatrix { _ -> matrix })
+                    result.add(RgbMatrix { _, _ -> matrix })
                 }
                 EffectType.OPACITY -> {
                     // Opacity is handled via composition; skip matrix here

@@ -24,7 +24,13 @@ android {
 
 dependencies {
     implementation(project(":core"))
+    implementation(project(":effects"))
+    implementation(project(":media-engine"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.media3.transformer)
+    implementation(libs.media3.effect)
+    implementation(libs.media3.common)
+    implementation(libs.media3.exoplayer)
 }

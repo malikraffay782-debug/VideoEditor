@@ -143,4 +143,65 @@ class TimelineState(initial: Project) {
         val audio = Track(type = TrackType.AUDIO, name = "Audio 1")
         project = project.withTracks(listOf(video, audio))
     }
+
+    fun applyEffect(trackId: String, clipId: String, effect: com.videoeditor.core.model.Effect) {
+        pushUndo()
+        val tracks = project.tracks.map { track ->
+            if (track.id == trackId) {
+                track.updateClip(clipId) { it.withEffect(effect) }
+            } else track
+        }
+        project = project.withTracks(tracks)
+    }
+
+    fun removeEffect(trackId: String, clipId: String, type: com.videoeditor.core.model.EffectType) {
+        pushUndo()
+        val tracks = project.tracks.map { track ->
+            if (track.id == trackId) {
+                track.updateClip(clipId) { it.removeEffect(type) }
+            } else track
+        }
+        project = project.withTracks(tracks)
+    }
+
+    fun setClipVolume(trackId: String, clipId: String, volume: Float) {
+        pushUndo()
+        val tracks = project.tracks.map { track ->
+            if (track.id == trackId) {
+                track.updateClip(clipId) { it.withVolume(volume) }
+            } else track
+        }
+        project = project.withTracks(tracks)
+    }
+
+    fun setClipMuted(trackId: String, clipId: String, muted: Boolean) {
+        pushUndo()
+        val tracks = project.tracks.map { track ->
+            if (track.id == trackId) {
+                track.updateClip(clipId) { it.copy(isMuted = muted) }
+            } else track
+        }
+        project = project.withTracks(tracks)
+    }
+
+    fun setTransitionIn(trackId: String, clipId: String, transition: com.videoeditor.core.model.Transition) {
+        pushUndo()
+        val tracks = project.tracks.map { track ->
+            if (track.id == trackId) {
+                track.updateClip(clipId) { it.withTransitionIn(transition) }
+            } else track
+        }
+        project = project.withTracks(tracks)
+    }
+
+    fun setSpeed(trackId: String, clipId: String, speed: Float) {
+        pushUndo()
+        val tracks = project.tracks.map { track ->
+            if (track.id == trackId) {
+                track.updateClip(clipId) { it.copy(speed = speed.coerceIn(0.25f, 4f)) }
+            } else track
+        }
+        project = project.withTracks(tracks).recalculateDuration()
+    }
+
 }

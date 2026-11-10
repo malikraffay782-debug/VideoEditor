@@ -21,8 +21,13 @@ data class Clip(
     val timelineStartUs: Long = 0L,
     val speed: Float = 1.0f,
     val volume: Float = 1.0f,
+    val fadeInUs: Long = 0L,
+    val fadeOutUs: Long = 0L,
     val rotation: Int = 0,
-    val isMuted: Boolean = false
+    val isMuted: Boolean = false,
+    val effects: List<Effect> = emptyList(),
+    /** Transition applied at the start of this clip */
+    val transitionIn: Transition = Transition(type = TransitionType.NONE)
 ) {
     val timelineEndUs: Long
         get() = timelineStartUs + (durationUs / speed.coerceAtLeast(0.1f)).toLong()
@@ -35,4 +40,16 @@ data class Clip(
             sourceEndUs = newSourceEndUs,
             durationUs = newDurationUs
         )
+
+    fun withVolume(v: Float): Clip = copy(volume = v.coerceIn(0f, 2f))
+
+    fun withEffect(effect: Effect): Clip {
+        val others = effects.filter { it.type != effect.type }
+        return copy(effects = others + effect)
+    }
+
+    fun removeEffect(type: EffectType): Clip =
+        copy(effects = effects.filter { it.type != type })
+
+    fun withTransitionIn(t: Transition): Clip = copy(transitionIn = t)
 }

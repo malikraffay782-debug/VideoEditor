@@ -9,6 +9,8 @@ import java.util.UUID
 data class Clip(
     val id: String = UUID.randomUUID().toString(),
     val mediaUri: String,
+    /** Low-res proxy for timeline/preview; null = use original */
+    val proxyUri: String? = null,
     val mediaType: MediaType,
     val displayName: String,
     /** Source start time in microseconds (trim in point) */
@@ -52,4 +54,10 @@ data class Clip(
         copy(effects = effects.filter { it.type != type })
 
     fun withTransitionIn(t: Transition): Clip = copy(transitionIn = t)
+
+    fun withProxy(uri: String?): Clip = copy(proxyUri = uri)
+
+    /** URI to use for preview/timeline (proxy preferred when available) */
+    fun previewUri(preferProxy: Boolean = true): String =
+        if (preferProxy && proxyUri != null) proxyUri else mediaUri
 }

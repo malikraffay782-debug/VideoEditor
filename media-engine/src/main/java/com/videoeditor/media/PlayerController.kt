@@ -3,15 +3,16 @@ package com.videoeditor.media
 import android.content.Context
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import com.videoeditor.core.PerformanceManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Lightweight ExoPlayer wrapper.
- * Keeps a single player instance and exposes simple state for the UI.
- * Designed for low-end devices: no heavy listeners by default.
+ * Lightweight ExoPlayer wrapper tuned by PerformanceManager.
+ * Low buffer on Performance mode to reduce RAM pressure.
  */
 class PlayerController(context: Context) {
 
@@ -26,8 +27,11 @@ class PlayerController(context: Context) {
     private val _durationUs = MutableStateFlow(0L)
     val durationUs: StateFlow<Long> = _durationUs.asStateFlow()
 
+    private val loadControl: DefaultLoadControl = buildLoadControl()
+
     val player: ExoPlayer = ExoPlayer.Builder(appContext)
         .setHandleAudioBecomingNoisy(true)
+        .setLoadControl(loadControl)
         .build()
         .also { exo ->
             exo.addListener(object : Player.Listener {
@@ -37,11 +41,24 @@ class PlayerController(context: Context) {
 
                 override fun onPlaybackStateChanged(playbackState: Int) {
                     if (playbackState == Player.STATE_READY) {
-                        _durationUs.value = exo.duration.coerceAtLeast(0L) * 1000 // ms → us
+                        _durationUs.value = exo.duration.coerceAtLeast(0L) * 1000
                     }
                 }
             })
         }
+
+    private fun buildLoadControl(): DefaultLoadControl {
+        val bufferMs = PerformanceManager.playerBufferMs()
+        return DefaultLoadControl.Builder()
+            .setBufferDurationsMs(
+                bufferMs,           // minBuffer
+                bufferMs * 3,       // maxBuffer
+                bufferMs / 2,       // bufferForPlayback
+                bufferMs            // bufferForPlaybackAfterRebuffer
+            )
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+    }
 
     fun setMedia(uri: String) {
         val item = MediaItem.fromUri(uri)
@@ -83,6 +100,6 @@ class PlayerController(context: Context) {
     }
 
     fun updatePosition() {
-        _positionUs.value = player.currentPosition * 1000 // ms → us
+        _positionUs.value = player.currentPosition * 1000
     }
 }

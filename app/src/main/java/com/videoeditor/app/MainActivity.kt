@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.videoeditor.app.ui.EditorScreen
 import com.videoeditor.core.PerformanceDetector
+import com.videoeditor.core.PerformanceManager
+import com.videoeditor.core.PerformanceMode
 import com.videoeditor.core.model.Project
 import com.videoeditor.coreui.theme.VideoEditorTheme
 import com.videoeditor.project.ProjectRepository
@@ -75,6 +78,7 @@ fun AppRoot(repository: ProjectRepository) {
 fun HomeScreen(onNewProject: () -> Unit) {
     val context = LocalContext.current
     val capabilities = remember { PerformanceDetector.detect(context) }
+    var mode by remember { mutableStateOf(PerformanceManager.getMode()) }
 
     Column(
         modifier = Modifier
@@ -92,18 +96,46 @@ fun HomeScreen(onNewProject: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Phase 2 — Media & Timeline",
+            text = "Phase 4 — Low-end Optimization",
             color = Color(0xFFB0B0B0),
             fontSize = 16.sp
         )
         Spacer(modifier = Modifier.height(24.dp))
         Text(
-            text = "Mode: ${capabilities.recommendedMode}",
-            color = Color(0xFF80CBC4),
-            fontSize = 14.sp
+            text = "Device: ${capabilities.totalRamMb} MB RAM · ${capabilities.cpuCores} cores",
+            color = Color(0xFF888888),
+            fontSize = 12.sp
         )
         Text(
-            text = "RAM: ${capabilities.totalRamMb} MB · Preview: ${capabilities.maxPreviewHeight}p",
+            text = "Recommended: ${capabilities.recommendedMode}",
+            color = Color(0xFF80CBC4),
+            fontSize = 13.sp
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Text(text = "Performance mode", color = Color(0xFFB0B0B0), fontSize = 12.sp)
+        Spacer(modifier = Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(
+                PerformanceMode.PERFORMANCE to "Perf",
+                PerformanceMode.BALANCED to "Balanced",
+                PerformanceMode.HIGH_QUALITY to "HQ"
+            ).forEach { (m, label) ->
+                Button(
+                    onClick = {
+                        PerformanceManager.setMode(m)
+                        mode = PerformanceManager.getMode()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (mode == m) Color(0xFF4FC3F7) else Color(0xFF2A2A2A)
+                    )
+                ) {
+                    Text(label, color = if (mode == m) Color.Black else Color.White, fontSize = 12.sp)
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "Preview: ${PerformanceManager.maxPreviewHeight()}p · Proxy: ${PerformanceManager.useProxyForPreview()}",
             color = Color(0xFF888888),
             fontSize = 12.sp
         )

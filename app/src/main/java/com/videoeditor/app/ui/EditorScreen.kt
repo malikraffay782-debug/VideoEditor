@@ -53,6 +53,9 @@ import com.videoeditor.export.ExportState
 import com.videoeditor.export.VideoExporter
 import com.videoeditor.media.MediaImportHelper
 import com.videoeditor.media.PlayerController
+import com.videoeditor.media.ProxyGenerator
+import com.videoeditor.media.TempFileManager
+import com.videoeditor.core.PerformanceManager
 import com.videoeditor.timeline.TimelineState
 import com.videoeditor.timeline.ui.TimelineView
 import kotlinx.coroutines.delay
@@ -114,14 +117,32 @@ fun EditorScreen(
         scope.launch {
             val clip = MediaImportHelper.createClipFromUri(context, uri)
             if (clip != null) {
-                timelineState.addClipToNewVideoTrack(clip)
-                timelineVersion++
-                if (clip.mediaType == com.videoeditor.core.model.MediaType.VIDEO ||
-                    clip.mediaType == com.videoeditor.core.model.MediaType.AUDIO
+                var finalClip = clip
+                // Generate proxy on background for low-end / balanced modes
+                if (PerformanceManager.useProxyForPreview() &&
+                    (clip.mediaType == com.videoeditor.core.model.MediaType.VIDEO)
                 ) {
-                    playerController.setMedia(clip.mediaUri)
+                    statusMessage = "Creating proxy…"
+                    val tmp = TempFileManager(context)
+                    val proxyGen = ProxyGenerator(context, tmp)
+                    val proxyPath = proxyGen.ensureProxy(clip.id, clip.mediaUri, clip.mediaType)
+                    if (proxyPath != null) {
+                        finalClip = clip.withProxy(proxyPath)
+                        statusMessage = "Imported (proxy): ${clip.displayName}"
+                    } else {
+                        statusMessage = "Imported: ${clip.displayName}"
+                    }
+                } else {
+                    statusMessage = "Imported: ${clip.displayName}"
                 }
-                statusMessage = "Imported: ${clip.displayName}"
+                timelineState.addClipToNewVideoTrack(finalClip)
+                timelineVersion++
+                val playUri = finalClip.previewUri(PerformanceManager.useProxyForPreview())
+                if (finalClip.mediaType == com.videoeditor.core.model.MediaType.VIDEO ||
+                    finalClip.mediaType == com.videoeditor.core.model.MediaType.AUDIO
+                ) {
+                    playerController.setMedia(playUri)
+                }
             } else {
                 statusMessage = "Could not import media"
             }
